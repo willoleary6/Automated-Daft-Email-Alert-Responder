@@ -67,13 +67,13 @@ def read_email_from_gmail():
                         elif "attachment" in content_disposition:
                             # download attachment
                             filename = part.get_filename()
-                            if filename:
-                                if not os.path.isdir(subject):
+                            #if filename:
+                                #if not os.path.isdir(subject):
                                     # make a folder for this email (named after the subject)
-                                    os.mkdir(subject)
-                                filepath = os.path.join(subject, filename)
+                                    #os.mkdir(subject)
+                                #filepath = os.path.join(subject, filename)
                                 # download attachment and save it
-                                open(filepath, "wb").write(part.get_payload(decode=True))
+                                #open(filepath, "wb").write(part.get_payload(decode=True))
                 else:
                     # extract content type of email
                     content_type = msg.get_content_type()
@@ -87,10 +87,10 @@ def read_email_from_gmail():
                     if not os.path.isdir(subject):
                         # make a folder for this email (named after the subject)
                         os.mkdir(subject)
-                    filename = f"{subject[:50]}.html"
-                    filepath = os.path.join(subject, filename)
+                    #filename = f"{subject[:50]}.html"
+                    #filepath = os.path.join(subject, filename)
                     # write the file
-                    open(filepath, "w").write(body)
+                    #open(filepath, "w").write(body)
                     # open in the default browser
                     #webbrowser.open(filepath)
                 print("=" * 100)
