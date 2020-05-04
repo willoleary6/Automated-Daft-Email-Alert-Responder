@@ -26,7 +26,7 @@ class testReadAndWrite(TestCsvHandler):
     def test_read_csv_file_get_data(self):
         self.CsvHandler.read_csv_file()
         actual_length = len(self.CsvHandler.get_data_read_from_csv())
-        expected_length = 1
+        expected_length = 0
         # testing that the file is actually populated
         value_for_assert = False
         if actual_length >= expected_length:

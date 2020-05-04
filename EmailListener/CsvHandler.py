@@ -1,11 +1,11 @@
 import csv
 import sys
-
-sys.path.append('../')
 import config
 
+sys.path.append('../')
 
-class CsvHandler():
+
+class CsvHandler:
 
     def __init__(self):
         self._file_name = config.csv_file_name
@@ -27,15 +27,29 @@ class CsvHandler():
 
     def read_csv_file(self):
         # go to project directory and find persistent data folder
-        with open(sys.path[1] + '\\PersistentData\\' + self._file_name) as csv_file:
-            csv_reader = csv.reader(csv_file, delimiter=',')
-            got_column_names = False
-            for row in csv_reader:
+        try:
+            with open(sys.path[1] + '\\PersistentData\\' + self._file_name) as csv_file:
+                csv_reader = csv.reader(csv_file, delimiter=',')
+                got_column_names = False
+                for row in csv_reader:
+                    if not got_column_names:
+                        self._build_csv_structure_dict(row)
+                        got_column_names = True
+                    else:
+                        self._append_to_data_read_from_csv(row)
+                # somethings wrong...
                 if not got_column_names:
-                    self._build_csv_structure_dict(row)
-                    got_column_names = True
-                else:
-                    self._append_to_data_read_from_csv(row)
+                    raise ValueError('File Corrupted, rebuilding')
+
+        except ValueError:
+            # csv file has been corrupted, rebuild it
+            self._data_read_from_csv = []
+            with open(sys.path[1] + '\\PersistentData\\' + self._file_name, mode='w') as csv_file:
+                writer = csv.DictWriter(csv_file, fieldnames=config.default_csv_structure.split(','),
+                                        lineterminator='\n')
+                writer.writeheader()
+            # rerun this method
+            self.read_csv_file()
 
     def write_to_csv_file(self, dict_of_new_entry):
         current_list_of_entries = self._data_read_from_csv
