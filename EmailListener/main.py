@@ -1,7 +1,7 @@
 import sys
 import config
 import time
-
+from EmailListener.Scanner import Scanner
 sys.path.append('../')
 
 
@@ -14,6 +14,8 @@ def main():
     # infinite loop, to check the emails
     while True:
         print('----------------------------------Starting scan, checking emails---------------------------------------')
+        email_scanner = Scanner()
+        email_scanner.scan_email_inbox()
 
         count += 1
         print('----------------------------------Scan Complete Going to sleep-----------------------------------------')
