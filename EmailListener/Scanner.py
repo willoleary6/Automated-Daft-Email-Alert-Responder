@@ -29,7 +29,7 @@ class Scanner:
         mail.login(self._email, self._password)
         return mail
 
-    def _parse_date(self,string_date):
+    def _parse_date(self, string_date):
         date_patterns = config.date_formats
 
         for pattern in date_patterns:
@@ -60,6 +60,15 @@ class Scanner:
         }
         self.csv_handler.write_to_csv_file(commit_dict)
 
+    def _parse_body(self, data):
+        # extract content type of email
+        content_type = data.get_content_type()
+        # get the email body
+        # will be an array first index is the plain text while the second is the html
+        body = data.get_payload()[0]
+        print('----------------------------')
+        print(body)
+
     def parse_email(self, data):
         for response in data:
             self.csv_handler.read_csv_file()
@@ -79,15 +88,16 @@ class Scanner:
                     sender = email_data.get("From")
                     receiver = self._email
                     status = 'Scanned'
-                    #print("Subject:", subject)
-                    #print("From:", sender)
-                    #print("Date:", received_date)
                     # need to see if the this email has already been cataloged
                     if (len(previously_scanned_emails)) > 0:
                         last_scanned_email = previously_scanned_emails[len(previously_scanned_emails) - 1]
                         date_of_last_scanned_email = self._parse_date(last_scanned_email['date'])
                         if date_of_last_scanned_email < received_date:
-                            self._commit_email_to_persistent_storage(sender, receiver, subject, received_date, status)
+                            print("Subject:", subject)
+                            print("From:", sender)
+                            print("Date:", received_date)
+                            self._parse_body(email_data)
+                            # self._commit_email_to_persistent_storage(sender, receiver, subject, received_date, status)
 
                     else:
                         self._commit_email_to_persistent_storage(sender, receiver, subject, received_date, status)
