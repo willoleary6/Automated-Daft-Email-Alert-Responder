@@ -29,19 +29,23 @@ class Scanner:
         mail.login(self._email, self._password)
         return mail
 
+    def _parse_date(self,string_date):
+        date_patterns = config.date_formats
+
+        for pattern in date_patterns:
+
+            try:
+                return datetime.datetime.strptime(string_date, pattern)
+            except:
+                pass
+
+        print("Date is not in expected format: %s" % string_date)
+        sys.exit(0)
+
     def scan_email_inbox(self):
-        self.mail_connection.select('inbox')
-        email_type, data = self.mail_connection.search(None, 'ALL')
-        mail_ids = data[0]
-
-        id_list = mail_ids.split()
-        print(id_list)
-        first_email_id = int(id_list[0])
-        latest_email_id = int(id_list[-1])
-
-        for i in range(first_email_id, latest_email_id):
+        status, messages = self.mail_connection.select('INBOX')
+        for i in range(1, int(messages[0]) + 1):
             typ, data = self.mail_connection.fetch(str(i), "(RFC822)")
-            print(data)
             self.parse_email(data)
 
     def _commit_email_to_persistent_storage(self, sender, receiver, subject, date, status, file_path=''):
@@ -65,9 +69,7 @@ class Scanner:
                 try:
                     # parse a bytes email into a message object
                     email_data = email.message_from_bytes(response[1])
-                    print(decode_header(email_data["Date"])[0][0])
-                    received_date = datetime.datetime.strptime(
-                        decode_header(email_data["Date"])[0][0], '%a, %d %b %Y %H:%M:%S %z (%Z)')
+                    received_date = self._parse_date(decode_header(email_data["Date"])[0][0])
                     # decode the email subject
                     subject = decode_header(email_data["Subject"])[0][0]
                     if isinstance(subject, bytes):
@@ -77,24 +79,18 @@ class Scanner:
                     sender = email_data.get("From")
                     receiver = self._email
                     status = 'Scanned'
-                    # print("Subject:", subject)
-                    # print("From:", sender)
-                    # print("Date:", received_date)
+                    #print("Subject:", subject)
+                    #print("From:", sender)
+                    #print("Date:", received_date)
                     # need to see if the this email has already been cataloged
                     if (len(previously_scanned_emails)) > 0:
                         last_scanned_email = previously_scanned_emails[len(previously_scanned_emails) - 1]
-                        date_of_last_scanned_email = datetime.datetime.strptime(
-                            last_scanned_email['date'], '%Y-%b-%d %H:%M:%S %z')
+                        date_of_last_scanned_email = self._parse_date(last_scanned_email['date'])
                         if date_of_last_scanned_email < received_date:
-                            print('test')
-                            print(str(sender) + ' ' + str(receiver) + ' ' + str(subject) + ' ' + str(
-                                received_date) + ' ' + str(status))
-                            # self._commit_email_to_persistent_storage(sender, receiver, subject, received_date, status)
+                            self._commit_email_to_persistent_storage(sender, receiver, subject, received_date, status)
 
                     else:
-                        print('Empty file')
-                        print(str(sender) + ' ' + str(receiver) + ' ' + str(subject) + ' ' + str(
-                            received_date) + ' ' + str(status))
                         self._commit_email_to_persistent_storage(sender, receiver, subject, received_date, status)
+
                 except Exception as e:
                     print(e)

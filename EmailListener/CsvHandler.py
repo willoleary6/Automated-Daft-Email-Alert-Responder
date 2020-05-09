@@ -4,6 +4,8 @@ import config
 
 sys.path.append('../')
 
+import os
+from pathlib import Path
 
 class CsvHandler:
 
@@ -11,6 +13,7 @@ class CsvHandler:
         self._file_name = config.csv_file_name
         self._data_read_from_csv = []
         self._csv_structure_dict = {}
+        self._parent_directory = str(Path(os.getcwd()).parent)
 
     def _build_csv_structure_dict(self, columns):
         for c in columns:
@@ -28,7 +31,8 @@ class CsvHandler:
     def read_csv_file(self):
         # go to project directory and find persistent data folder
         try:
-            with open(sys.path[1] + '\\PersistentData\\' + self._file_name) as csv_file:
+            self._data_read_from_csv = []
+            with open(self._parent_directory + '\\PersistentData\\' + self._file_name) as csv_file:
                 csv_reader = csv.reader(csv_file, delimiter=',')
                 got_column_names = False
                 for row in csv_reader:
@@ -44,7 +48,7 @@ class CsvHandler:
         except ValueError:
             # csv file has been corrupted, rebuild it
             self._data_read_from_csv = []
-            with open(sys.path[1] + '\\PersistentData\\' + self._file_name, mode='w') as csv_file:
+            with open(self._parent_directory + '\\PersistentData\\' + self._file_name, mode='w') as csv_file:
                 writer = csv.DictWriter(csv_file, fieldnames=config.default_csv_structure.split(','),
                                         lineterminator='\n')
                 writer.writeheader()
@@ -54,7 +58,8 @@ class CsvHandler:
     def write_to_csv_file(self, dict_of_new_entry):
         current_list_of_entries = self._data_read_from_csv
         current_list_of_entries.append(dict_of_new_entry)
-        with open(sys.path[1] + '\\PersistentData\\' + self._file_name, mode='w') as csv_file:
+
+        with open(self._parent_directory + '\\PersistentData\\' + self._file_name, mode='w') as csv_file:
             writer = csv.DictWriter(csv_file, fieldnames=dict_of_new_entry.keys(), lineterminator='\n')
             writer.writeheader()
             for c in current_list_of_entries:

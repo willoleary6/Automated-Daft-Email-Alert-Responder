@@ -22,19 +22,32 @@ SMTP_PORT = 993
 def read_email_from_gmail():
     mail = imaplib.IMAP4_SSL(SMTP_SERVER)
     mail.login(FROM_EMAIL, FROM_PWD)
-    mail.select('inbox')
 
-    type, data = mail.search(None, 'ALL')
-    mail_ids = data[0]
-
-    id_list = mail_ids.split()
-    first_email_id = int(id_list[0])
-    latest_email_id = int(id_list[2])
-    print(id_list)
-    for i in range(latest_email_id, first_email_id, -1):
-        print(i)
+    status, messages = mail.select('INBOX')
+    for i in range(1, int(messages[0])+1):
+        print('--------------------------------')
         typ, data = mail.fetch(str(i), "(RFC822)")
+        for response in data:
+            if isinstance(response, tuple):
+                # parse a bytes email into a message object
+                msg = email.message_from_bytes(response[1])
+                received_date = datetime.datetime.strptime(decode_header(msg["Date"])[0][0], '%a, %d %b %Y %H:%M:%S %z')
+                # decode the email subject
+                subject = decode_header(msg["Subject"])[0][0]
+                if isinstance(subject, bytes):
+                    # if it's a bytes, decode to str
+                    subject = subject.decode()
+                # email sender
+                from_ = msg.get("From")
+                print("Subject:", subject)
+                print("From:", from_)
+                print("Date:", received_date)
 
+    '''
+    for i in range(latest_email_id, first_email_id, -1):
+        typ, data = mail.fetch(str(i), "(RFC822)")
+        print(i)
+        
         for response in data:
             if isinstance(response, tuple):
                 # parse a bytes email into a message object
@@ -95,6 +108,6 @@ def read_email_from_gmail():
                     # open in the default browser
                     #webbrowser.open(filepath)
                 print("=" * 100)
-
+    '''
 
 read_email_from_gmail()
