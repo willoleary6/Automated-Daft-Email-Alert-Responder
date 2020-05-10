@@ -45,8 +45,7 @@ class Scanner:
     def scan_email_inbox(self):
         status, messages = self.mail_connection.select('INBOX')
         for i in range(1, int(messages[0]) + 1):
-            typ, data = self.mail_connection.fetch(str(i), "(RFC822)")
-            self.parse_email(data)
+            self.parse_email(i)
 
     def _commit_email_to_persistent_storage(self, sender, receiver, subject, date, status, file_path=''):
         # sender,receiver,subject,date,status,file path
@@ -69,7 +68,18 @@ class Scanner:
         print('----------------------------')
         print(body)
 
-    def parse_email(self, data):
+    @staticmethod
+    def _parse_uid(data):
+        match = config.uid_pattern.match(data)
+        return match.group('uid')
+
+    def _copy_email_to_inFocus_folder(self, email_id):
+        resp, data = self.mail_connection.fetch(str(email_id), "(UID)")
+        msg_uid = self._parse_uid(data[0].decode('utf-8'))
+        self.mail_connection.uid('COPY', msg_uid, config.InFocusGmailFolderName)
+
+    def parse_email(self, email_index):
+        typ, data = self.mail_connection.fetch(str(email_index), "(RFC822)")
         for response in data:
             self.csv_handler.read_csv_file()
             previously_scanned_emails = self.csv_handler.get_data_read_from_csv()
@@ -97,6 +107,10 @@ class Scanner:
                             print("From:", sender)
                             print("Date:", received_date)
                             self._parse_body(email_data)
+                            # copy the email into the InFocus folder so we can spool up and android emulator
+                            # open gmail -> navigate to the the InFocus folder and will select the first email in that
+                            # folder (Should be the one currently in memory)
+                            self._copy_email_to_inFocus_folder(email_index)
                             # self._commit_email_to_persistent_storage(sender, receiver, subject, received_date, status)
 
                     else:

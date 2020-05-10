@@ -1,4 +1,5 @@
 cd C:\adb\platform-tools
+adb devices -l
 adb connect localhost:5555
 adb shell
 pm list packages -f

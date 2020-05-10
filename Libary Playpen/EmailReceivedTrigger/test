@@ -1,19 +1,9 @@
-import imaplib
-import email
-mail = imaplib.IMAP4_SSL('imap.gmail.com')
-ORG_EMAIL = "@gmail.com"
-FROM_EMAIL = "william.o.leary.789" + ORG_EMAIL
-FROM_PWD = "NewHouseWithTheBois66!"
+import os
 
-mail.login(FROM_EMAIL, FROM_PWD)
+def _is_connected_to_emulator(arr_response):
 
-status, messages = mail.select('INBOX')
 
-if status != "OK": exit("Incorrect mail box")
-
-for i in range(1, int(messages[0])+1):
-    res, msg = mail.fetch(str(i), '(RFC822)')
-    for response in msg:
-        if isinstance(response, tuple):
-            msg = email.message_from_bytes(response[1])
-            print (msg["subject"])
+os.chdir('C:\\adb\\platform-tools') # This will change the present working directory
+#test = os.system("adb devices -l") # Some application invocation I need to do.
+test = os.popen('adb devices -l').read()
+print(test.split('\n'))

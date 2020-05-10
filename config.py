@@ -1,3 +1,5 @@
+import re
+
 email = 'william.o.leary.789@gmail.com'
 email_password = 'NewHouseWithTheBois66!'
 csv_file_name = 'ArchivedEmails.csv'
@@ -11,3 +13,5 @@ date_formats = [
     '%Y-%b-%d %H:%M:%S %z',
     '%Y-%b-%d %H:%M:%S '
 ]
+uid_pattern = re.compile('\d+ \(UID (?P<uid>\d+)\)')
+InFocusGmailFolderName = 'InFocus'

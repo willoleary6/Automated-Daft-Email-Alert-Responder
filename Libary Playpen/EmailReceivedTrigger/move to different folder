@@ -30,9 +30,10 @@ if __name__ == '__main__':
     print(msg_uid)
 
     result = imap.uid('COPY', msg_uid, 'InFocus')
-    
+   # mov, data = imap.uid('STORE', msg_uid, '+FLAGS', '(\Deleted)')
+    #imap.expunge()
     #if result[0] == 'OK':
      #   mov, data = imap.uid('STORE', msg_uid , '+FLAGS', '(\Deleted)')
       #  imap.expunge()
 
-    #disconnect(imap)
+    disconnect(imap)
