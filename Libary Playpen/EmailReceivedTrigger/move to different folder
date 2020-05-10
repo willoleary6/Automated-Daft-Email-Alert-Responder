@@ -1,0 +1,38 @@
+import imaplib, getpass, re
+from email.header import decode_header
+pattern_uid = re.compile('\d+ \(UID (?P<uid>\d+)\)')
+
+def connect():
+    imap = imaplib.IMAP4_SSL("imap.gmail.com")
+
+    imap.login('william.o.leary.789@gmail.com', 'NewHouseWithTheBois66!')
+    return imap
+
+def disconnect(imap):
+    imap.logout()
+
+def parse_uid(data):
+    match = pattern_uid.match(data)
+    return match.group('uid')
+
+if __name__ == '__main__':
+    imap = connect()
+    status, messages = imap.select('INBOX')
+    email_ids  = messages[0].split()
+
+    latest_email_id = email_ids[-1] # Assuming that you are moving the latest email.
+
+    resp, data = imap.fetch(latest_email_id, "(UID)")
+
+
+    msg_uid = parse_uid(data[0].decode('utf-8'))
+
+    print(msg_uid)
+
+    result = imap.uid('COPY', msg_uid, 'InFocus')
+    
+    #if result[0] == 'OK':
+     #   mov, data = imap.uid('STORE', msg_uid , '+FLAGS', '(\Deleted)')
+      #  imap.expunge()
+
+    #disconnect(imap)
