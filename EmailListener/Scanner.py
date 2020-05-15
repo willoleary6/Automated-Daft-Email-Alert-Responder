@@ -7,6 +7,7 @@ import webbrowser
 import os
 import sys
 import config
+from EmailListener.EmulatorDriver import message_landlord_on_emulator
 from EmailListener.CsvHandler import CsvHandler
 
 sys.path.append('../')
@@ -44,7 +45,7 @@ class Scanner:
 
     def scan_email_inbox(self):
         status, messages = self.mail_connection.select('INBOX')
-        for i in range(1, int(messages[0]) + 1):
+        for i in range(int(messages[0]), 0, -1):
             self.parse_email(i)
 
     def _commit_email_to_persistent_storage(self, sender, receiver, subject, date, status, file_path=''):
@@ -111,10 +112,20 @@ class Scanner:
                             # open gmail -> navigate to the the InFocus folder and will select the first email in that
                             # folder (Should be the one currently in memory)
                             self._copy_email_to_inFocus_folder(email_index)
-                            # self._commit_email_to_persistent_storage(sender, receiver, subject, received_date, status)
+
+                            # write message to landlord
+                            message_landlord_on_emulator(
+                                "Hi, \n is this property still available? \n thanks, \n William")
+
+                            self._commit_email_to_persistent_storage(sender, receiver, subject, received_date, status)
 
                     else:
+                        print("Subject:", subject)
+                        print("From:", sender)
+                        print("Date:", received_date)
+                        self._copy_email_to_inFocus_folder(email_index)
+                        # write message to landlord
+                        message_landlord_on_emulator("Hi, \n is this property still available? \n thanks, \n William")
                         self._commit_email_to_persistent_storage(sender, receiver, subject, received_date, status)
-
                 except Exception as e:
                     print(e)
