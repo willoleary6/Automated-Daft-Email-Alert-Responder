@@ -91,7 +91,7 @@ class Scanner:
     def _parse_email(self, email_index):
         typ, data = self._mail_connection.fetch(str(email_index), "(RFC822)")
         for response in data:
-            self._logger.info('--------------- Reading CSV File ------------------')
+            self._logger.info('------------------------------- Reading CSV File ----------------------------------')
             self._csv_handler.read_csv_file()
             previously_scanned_emails = self._csv_handler.get_data_read_from_csv()
 
@@ -108,20 +108,23 @@ class Scanner:
                     # email sender
                     sender = email_data.get("From")
                     receiver = self._email
-                    status = 'Scanned'
-                    # need to see if the this email has already been cataloged
-                    if (len(previously_scanned_emails)) > 0:
 
-                        last_scanned_email = previously_scanned_emails[len(previously_scanned_emails) - 1]
-                        date_of_last_scanned_email = self._parse_date(last_scanned_email['date'])
-                        if date_of_last_scanned_email < received_date:
+                    status = 'Scanned'
+                    if sender.find('Daft.ie Property Alert') > -1:
+                        # need to see if the this email has already been cataloged
+                        if (len(previously_scanned_emails)) > 0:
+
+                            last_scanned_email = previously_scanned_emails[len(previously_scanned_emails) - 1]
+                            date_of_last_scanned_email = self._parse_date(last_scanned_email['date'])
+                            if date_of_last_scanned_email < received_date:
+                                self._process_email(sender, subject, received_date,
+                                                    email_data, email_index, receiver, status)
+                        else:
                             self._process_email(sender, subject, received_date,
                                                 email_data, email_index, receiver, status)
                     else:
-                        self._process_email(sender, subject, received_date,
-                                            email_data, email_index, receiver, status)
+                        self._logger.info('--------------- Not a property Alert email ------------------')
                 except Exception as e:
-                    print(e)
                     self._logger.warning(e)
                     sys.exit(0)
 

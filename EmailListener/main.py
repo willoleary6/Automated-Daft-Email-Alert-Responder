@@ -40,6 +40,7 @@ def main():
         logger.info(
             '-----------------------------' + str(datetime.datetime.now()) + '-----------------------------------')
         logger.handlers[0].flush()
+        logger = _initialise_logger()
         time.sleep(config.default_sleep_time)
 
 
