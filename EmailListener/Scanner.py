@@ -1,54 +1,57 @@
 import datetime
-import smtplib
-import time
 import imaplib
 import email
-import webbrowser
-import os
 import sys
 import config
+import re
+from EmailListener.DaftScraper import DaftScraper
 from EmailListener.EmulatorDriver import message_landlord_on_emulator
 from EmailListener.CsvHandler import CsvHandler
+from email.header import decode_header
 
 sys.path.append('../')
-
-from email.header import decode_header
 
 
 class Scanner:
 
-    def __init__(self):
+    def __init__(self, logger):
+        self._logger = logger
         self._email = config.email
         self._password = config.email_password
         self._smtp_server = config.smtp_server
         self._smtp_port = config.smtp_port
-        self.mail_connection = self._initialise_connection_to_email()
-        self.csv_handler = CsvHandler()
+        self._mail_connection = self._initialise_connection_to_email()
+        self._csv_handler = CsvHandler()
 
     def _initialise_connection_to_email(self):
+        self._logger.info('- Connecting to email server ')
         mail = imaplib.IMAP4_SSL(self._smtp_server)
         mail.login(self._email, self._password)
         return mail
 
     def _parse_date(self, string_date):
         date_patterns = config.date_formats
-
         for pattern in date_patterns:
-
             try:
                 return datetime.datetime.strptime(string_date, pattern)
             except:
                 pass
 
-        print("Date is not in expected format: %s" % string_date)
+        self._logger.Warning('- Date is not in expected format -')
+        self._logger.Debug('- ' + string_date + ' ')
+        self._logger.Warning('')
         sys.exit(0)
 
     def scan_email_inbox(self):
-        status, messages = self.mail_connection.select('INBOX')
+        status, messages = self._mail_connection.select('INBOX')
+        self._logger.info(' Reading inbox-')
+        self._logger.info(
+            '-' + str(messages[0]) + ' emails in inbox-')
         for i in range(int(messages[0]), 0, -1):
-            self.parse_email(i)
+            self._parse_email(i)
 
     def _commit_email_to_persistent_storage(self, sender, receiver, subject, date, status, file_path=''):
+        self._logger.info(' Saving email details in csv file ')
         # sender,receiver,subject,date,status,file path
         commit_dict = {
             'sender': sender,
@@ -58,16 +61,19 @@ class Scanner:
             'status': status,
             'file path': file_path
         }
-        self.csv_handler.write_to_csv_file(commit_dict)
+        self._csv_handler.write_to_csv_file(commit_dict)
 
-    def _parse_body(self, data):
+    def _extract_url_from_email_body(self, data):
         # extract content type of email
-        content_type = data.get_content_type()
         # get the email body
-        # will be an array first index is the plain text while the second is the html
-        body = data.get_payload()[0]
-        print('----------------------------')
-        print(body)
+        self._logger.info(' Parsing body -')
+        body = str(data.get_payload()[0])
+        # format to parse links
+        body = body.replace('=\n', '=')
+        # get all the links
+        matches = re.findall("(?P<url>https?://[^\s]+)", body)
+        # return the first cus that's always the daft ad listing's link
+        return matches[0]
 
     @staticmethod
     def _parse_uid(data):
@@ -75,15 +81,18 @@ class Scanner:
         return match.group('uid')
 
     def _copy_email_to_inFocus_folder(self, email_id):
-        resp, data = self.mail_connection.fetch(str(email_id), "(UID)")
+        self._logger.info(
+            '- Moving Email ' + str(email_id) + ' to label in gmail -')
+        resp, data = self._mail_connection.fetch(str(email_id), "(UID)")
         msg_uid = self._parse_uid(data[0].decode('utf-8'))
-        self.mail_connection.uid('COPY', msg_uid, config.InFocusGmailFolderName)
+        self._mail_connection.uid('COPY', msg_uid, config.InFocusGmailFolderName)
 
-    def parse_email(self, email_index):
-        typ, data = self.mail_connection.fetch(str(email_index), "(RFC822)")
+    def _parse_email(self, email_index):
+        typ, data = self._mail_connection.fetch(str(email_index), "(RFC822)")
         for response in data:
-            self.csv_handler.read_csv_file()
-            previously_scanned_emails = self.csv_handler.get_data_read_from_csv()
+            self._logger.info('- Reading CSV File ')
+            self._csv_handler.read_csv_file()
+            previously_scanned_emails = self._csv_handler.get_data_read_from_csv()
 
             if isinstance(response, tuple):
                 try:
@@ -98,34 +107,46 @@ class Scanner:
                     # email sender
                     sender = email_data.get("From")
                     receiver = self._email
+
                     status = 'Scanned'
-                    # need to see if the this email has already been cataloged
-                    if (len(previously_scanned_emails)) > 0:
-                        last_scanned_email = previously_scanned_emails[len(previously_scanned_emails) - 1]
-                        date_of_last_scanned_email = self._parse_date(last_scanned_email['date'])
-                        if date_of_last_scanned_email < received_date:
-                            print("Subject:", subject)
-                            print("From:", sender)
-                            print("Date:", received_date)
-                            self._parse_body(email_data)
-                            # copy the email into the InFocus folder so we can spool up and android emulator
-                            # open gmail -> navigate to the the InFocus folder and will select the first email in that
-                            # folder (Should be the one currently in memory)
-                            self._copy_email_to_inFocus_folder(email_index)
+                    if sender.find('Daft.ie Property Alert') > -1:
+                        # need to see if the this email has already been cataloged
+                        if (len(previously_scanned_emails)) > 0:
 
-                            # write message to landlord
-                            message_landlord_on_emulator(
-                                "Hi, \n is this property still available? \n thanks, \n William")
-
-                            self._commit_email_to_persistent_storage(sender, receiver, subject, received_date, status)
-
+                            last_scanned_email = previously_scanned_emails[len(previously_scanned_emails) - 1]
+                            date_of_last_scanned_email = self._parse_date(last_scanned_email['date'])
+                            if date_of_last_scanned_email < received_date:
+                                self._process_email(sender, subject, received_date,
+                                                    email_data, email_index, receiver, status)
+                        else:
+                            self._process_email(sender, subject, received_date,
+                                                email_data, email_index, receiver, status)
                     else:
-                        print("Subject:", subject)
-                        print("From:", sender)
-                        print("Date:", received_date)
-                        self._copy_email_to_inFocus_folder(email_index)
-                        # write message to landlord
-                        message_landlord_on_emulator("Hi, \n is this property still available? \n thanks, \n William")
-                        self._commit_email_to_persistent_storage(sender, receiver, subject, received_date, status)
+                        self._logger.info('- Not a property Alert email ')
                 except Exception as e:
+                    self._logger.warning(e)
+                    self._logger.handlers[0].flush()
                     print(e)
+                    sys.exit(0)
+
+    def _process_email(self, sender, subject, received_date, email_data, email_index, receiver, status):
+        self._logger.info('- New Email ! ')
+        self._logger.info('Subject:' + str(subject))
+        self._logger.info('From:' + str(sender))
+        self._logger.info('Date:' + str(received_date))
+        self._logger.info('')
+
+        # scrape url
+        scraper = DaftScraper(str(subject), self._extract_url_from_email_body(email_data))
+        scraper.scrape_details()
+        scraper.scrape_images()
+
+        # copy the email into the InFocus folder so we can spool up and android emulator
+        # open gmail -> navigate to the the InFocus folder and will select the first email in that
+        # folder (Should be the one currently in memory)
+        self._copy_email_to_inFocus_folder(email_index)
+        # write message to landlord
+        self._logger.info(' Launching emulator ')
+        message_landlord_on_emulator(config.message, self._logger)
+
+        self._commit_email_to_persistent_storage(sender, receiver, subject, received_date, status)
