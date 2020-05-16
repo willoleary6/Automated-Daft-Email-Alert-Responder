@@ -1,11 +1,11 @@
 import csv
 import sys
 import config
+import os
+from pathlib import Path
 
 sys.path.append('../')
 
-import os
-from pathlib import Path
 
 class CsvHandler:
 
