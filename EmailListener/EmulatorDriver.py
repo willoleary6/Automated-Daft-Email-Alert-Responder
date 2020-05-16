@@ -84,26 +84,29 @@ def _spool_up_emulator(failed_attempts=0):
 
 
 def message_landlord_on_emulator(message, logger):
-    logger.info('---------------------------Setting up emulator -----------------------------------------')
+    logger.info('-Setting up emulator -')
     os.chdir('C:\\adb\\platform-tools')  # This will change the present working directory
     # disconnect all devices first
     os.popen('adb disconnect').read()
     # reconnect to the emulator
     _spool_up_emulator()
-    logger.info('---------------------------Navigating to ad listing -----------------------------------------')
+    logger.info('-Navigating to ad listing -')
     _navigate_to_add_listing()
 
-    logger.info('---------------------------Writing message -----------------------------------------')
+    logger.info('-Writing message -')
     # write message
     _write_message(message)
 
     # terms and conditions
-    # logger.info('---------------------------Checking T&C box -----------------------------------------')
-    # time.sleep(config.short_wait_time_in_seconds) # blocking the terms and conditions checkbox so I don't spam people
-    # os.popen('adb -s localhost:5555 shell input touchscreen tap 55 1100').read()
-    logger.info('--------------------------- hitting send button -----------------------------------------')
+    # Adding a configurable to check the terms and conditions box so we can test without actually emailing people
+    if config.check_t_and_c_box:
+        logger.info('-Checking T&C box -')
+        time.sleep(config.short_wait_time_in_seconds)
+        os.popen('adb -s localhost:5555 shell input touchscreen tap 55 1100').read()
+
+    logger.info('- hitting send button -')
     # hit send message button
     time.sleep(config.short_wait_time_in_seconds)
     os.popen('adb -s '+config.emulator_connection_name+' shell input touchscreen tap 550 1190').read()
-    logger.info('--------------------------- Closing apps -----------------------------------------')
+    logger.info('- Closing apps -')
     _close_down_apps()

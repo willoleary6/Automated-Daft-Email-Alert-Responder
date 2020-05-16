@@ -25,3 +25,15 @@ x_long_wait_time_in_seconds = 20
 emulator_spool_up_time = 150
 use_phone_number = True
 phone_number = '0834740410'
+check_t_and_c_box = False
+
+
+# Message
+
+message = "Hi, \n is this property still available? \n thanks, \n William"
+
+# scraper
+default_destination_super_folder = 'C:\\Users\\willo\\Google Drive\\Daft Automated responder'
+chrome_driver = 'C:/Program Files/ChromeDriver/chromedriver.exe'
+daft_image_url = 'https://b.dmlimg.com/'
+

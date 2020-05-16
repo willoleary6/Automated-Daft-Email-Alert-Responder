@@ -1,14 +1,14 @@
 import datetime
-
+import config
 from selenium import webdriver
 from urllib.request import (urlretrieve)
 import os
 
 
 class DaftScraper:
-    def _init_(self, subject_of_email, url):
+    def __init__(self, subject_of_email, url):
         self._url = url
-        self._default_destination_super_folder = 'C:\\Users\\willo\\Google Drive\\Daft Automated responder'
+        self._default_destination_super_folder = config.default_destination_super_folder
         self._subject_of_email = subject_of_email
         self._formatted_datetime = str(datetime.datetime.now()).replace('.', '-').replace(':', '-')
         self._destination_folder = self._default_destination_super_folder + '\\' + \
@@ -20,10 +20,10 @@ class DaftScraper:
         self._chrome_options = webdriver.ChromeOptions()
         self._chrome_options.add_argument('headless')
 
-        self._driver = webdriver.Chrome("C:/Program Files/ChromeDriver/chromedriver.exe", options=self._chrome_options)
+        self._driver = webdriver.Chrome(config.chrome_driver, options=self._chrome_options, service_log_path='NUL')
         self._driver.get(self._url)
 
-    def _scrape_images(self):
+    def scrape_images(self):
         image_folder = self._destination_folder + '\\images'
         element = self._driver.find_elements_by_class_name('PropertyImage__ImageHolder')[0]
         webdriver.ActionChains(self._driver).move_to_element(element).click(element).perform()
@@ -34,7 +34,7 @@ class DaftScraper:
             if not os.path.exists(image_folder):
                 os.makedirs(image_folder)
             try:
-                if str(link).startswith('https://b.dmlimg.com/'):
+                if str(link).startswith(config.daft_image_url):
                     uri.append(link)
                     pos = len(link) - link[::-1].index('/')
                     urlretrieve(link, "/".join([image_folder, link[pos:]]))
@@ -42,11 +42,11 @@ class DaftScraper:
                 print('Invalid link')
                 print(e)
 
-    def _scrape_details(self):
+    def scrape_details(self):
         details_folder = self._destination_folder + '\\details'
         details = ''
 
-        details += '------------------------- Landord  -----------------------------\n'
+        details += '------------------------- Landlord  -----------------------------\n'
 
         detail_elements = self._driver.find_elements_by_class_name('ContactForm__negotiatorName')
         for element in detail_elements:
@@ -96,24 +96,3 @@ class DaftScraper:
         f.write(details)
         f.close()
 
-
-'''
-if __name__ == "__main__":
-    subject_of_email = 'Ringsend, Apartment To Let, €2,600 per month'
-
-    destination_folder = default_destination_super_folder + '\\' + subject_of_email + ' ' + \
-                         str(datetime.datetime.now()).replace('.', '-').replace(':', '-')
-    if not os.path.exists(destination_folder):
-        os.makedirs(destination_folder)
-
-    scrape_images(
-        'https://www.daft.ie/dublin/flats-for-rent/rathmines/4-windsor-road-1a-rathmines-dublin-2006893'
-        '/?utm_campaign=property_alert_email_residential_to_let&utm_medium=email&ea=1&utm_source=property_alert',
-        destination_folder
-    )
-
-    scrape_details('https://www.daft.ie/dublin/flats-for-rent/rathmines/4-windsor-road-1a-rathmines-dublin-2006893'
-                   '/?utm_campaign=property_alert_email_residential_to_let&utm_medium=email&ea=1&utm_source=property_alert',
-                   destination_folder
-                   )
-'''
