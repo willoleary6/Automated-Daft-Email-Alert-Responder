@@ -2,11 +2,11 @@ import datetime
 import imaplib
 import email
 import sys
-import config
+import config as config
 import re
-from EmailListener.DaftScraper import DaftScraper
-from EmailListener.EmulatorDriver import message_landlord_on_emulator
-from EmailListener.CsvHandler import CsvHandler
+from DaftScraper import DaftScraper
+from EmulatorDriver import message_landlord_on_emulator
+from CsvHandler import CsvHandler
 from email.header import decode_header
 
 sys.path.append('../')
@@ -160,7 +160,7 @@ class Scanner:
 
         # scrape url
         scraper = DaftScraper(str(subject), self._extract_url_from_email_body(email_data))
-        scraper.scrape_details()
+        ##scraper.scrape_details()
         scraper.scrape_images()
 
         # copy the email into the InFocus folder so we can spool up and android emulator

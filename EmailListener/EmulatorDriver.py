@@ -2,7 +2,7 @@ import os
 import sys
 import time
 import subprocess
-import config
+import config 
 
 sys.path.append('../')
 
@@ -20,6 +20,12 @@ def _write_message(message):
     os.popen('adb -s ' + config.emulator_connection_name + ' shell input touchscreen tap 100 900').read()
     time.sleep(config.short_wait_time_in_seconds)
     os.popen('adb -s ' + config.emulator_connection_name + ' shell input text "' + config.Name.strip().replace(" ", "\ ")+ '"').read()
+
+    # email
+    time.sleep(config.short_wait_time_in_seconds)
+    os.popen('adb -s ' + config.emulator_connection_name + ' shell input touchscreen tap 100 1060').read()
+    time.sleep(config.short_wait_time_in_seconds)
+    os.popen('adb -s ' + config.emulator_connection_name + ' shell input text "' + config.email.strip().replace(" ", "\ ")+ '"').read()
 
     # leaving option open as scam listings may be present
     if config.use_phone_number:
@@ -59,7 +65,7 @@ def _navigate_to_add_listing():
     os.popen('adb -s '+config.emulator_connection_name+' shell input touchscreen tap 1000 1000 ').read()
     # open the messaging screen
     time.sleep(config.x_long_wait_time_in_seconds)
-    os.popen('adb -s '+config.emulator_connection_name+' shell input touchscreen tap 900 1850').read()
+    os.popen('adb -s '+config.emulator_connection_name+' shell input touchscreen tap 350 1850').read()
 
 
 def _close_down_apps():
