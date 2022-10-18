@@ -1,11 +1,11 @@
 import os
 import sys
-import config
+import config 
 import time
 import logging
 import datetime
 
-from EmailListener.Scanner import Scanner
+from Scanner import Scanner
 
 sys.path.append('../')
 

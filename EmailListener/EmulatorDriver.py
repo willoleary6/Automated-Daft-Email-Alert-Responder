@@ -2,7 +2,7 @@ import os
 import sys
 import time
 import subprocess
-import config
+import config 
 
 sys.path.append('../')
 
@@ -15,17 +15,27 @@ def _is_connected_to_emulator(arr_response):
 
 
 def _write_message(message):
+    # open the text box
+    time.sleep(config.short_wait_time_in_seconds)
+    os.popen('adb -s ' + config.emulator_connection_name + ' shell input touchscreen tap 100 900').read()
+    time.sleep(config.short_wait_time_in_seconds)
+    os.popen('adb -s ' + config.emulator_connection_name + ' shell input text "' + config.Name.strip().replace(" ", "\ ")+ '"').read()
+
+    # email
+    time.sleep(config.short_wait_time_in_seconds)
+    os.popen('adb -s ' + config.emulator_connection_name + ' shell input touchscreen tap 100 1060').read()
+    time.sleep(config.short_wait_time_in_seconds)
+    os.popen('adb -s ' + config.emulator_connection_name + ' shell input text "' + config.email.strip().replace(" ", "\ ")+ '"').read()
+
     # leaving option open as scam listings may be present
     if config.use_phone_number:
         time.sleep(config.short_wait_time_in_seconds)
-        os.popen('adb -s '+config.emulator_connection_name+' shell input touchscreen tap 250 730').read()
+        os.popen('adb -s '+config.emulator_connection_name+' shell input touchscreen tap 140 1200').read()
         time.sleep(config.short_wait_time_in_seconds)
         os.popen('adb -s '+config.emulator_connection_name+' shell input text "' + config.phone_number + '"').read()
 
-    # open the text box
     time.sleep(config.short_wait_time_in_seconds)
-    os.popen('adb -s '+config.emulator_connection_name+' shell input touchscreen tap 100 900').read()
-
+    os.popen('adb -s ' + config.emulator_connection_name + ' shell input touchscreen tap 140 1400').read()
     # we need to format the message as to allow proper spacing and for adb to write it
     lines = message.split("\n")
     for l in lines:
@@ -55,7 +65,7 @@ def _navigate_to_add_listing():
     os.popen('adb -s '+config.emulator_connection_name+' shell input touchscreen tap 1000 1000 ').read()
     # open the messaging screen
     time.sleep(config.x_long_wait_time_in_seconds)
-    os.popen('adb -s '+config.emulator_connection_name+' shell input touchscreen tap 900 1850').read()
+    os.popen('adb -s '+config.emulator_connection_name+' shell input touchscreen tap 350 1850').read()
 
 
 def _close_down_apps():
@@ -102,11 +112,11 @@ def message_landlord_on_emulator(message, logger):
     if config.check_t_and_c_box:
         logger.info('-Checking T&C box -')
         time.sleep(config.short_wait_time_in_seconds)
-        os.popen('adb -s localhost:5555 shell input touchscreen tap 55 1100').read()
+        os.popen('adb -s localhost:5555 shell input touchscreen tap 55 1600').read()
 
     logger.info('- hitting send button -')
     # hit send message button
     time.sleep(config.short_wait_time_in_seconds)
-    os.popen('adb -s '+config.emulator_connection_name+' shell input touchscreen tap 550 1190').read()
+    os.popen('adb -s '+config.emulator_connection_name+' shell input touchscreen tap 550 1800').read()
     logger.info('- Closing apps -')
     _close_down_apps()

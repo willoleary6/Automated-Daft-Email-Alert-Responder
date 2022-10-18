@@ -2,11 +2,11 @@ import datetime
 import imaplib
 import email
 import sys
-import config
+import config as config
 import re
-from EmailListener.DaftScraper import DaftScraper
-from EmailListener.EmulatorDriver import message_landlord_on_emulator
-from EmailListener.CsvHandler import CsvHandler
+from DaftScraper import DaftScraper
+from EmulatorDriver import message_landlord_on_emulator
+from CsvHandler import CsvHandler
 from email.header import decode_header
 
 sys.path.append('../')
@@ -47,8 +47,17 @@ class Scanner:
         self._logger.info(' Reading inbox-')
         self._logger.info(
             '-' + str(messages[0]) + ' emails in inbox-')
-        for i in range(int(messages[0]), 0, -1):
-            self._parse_email(i)
+        list_of_emails = []
+
+        for i in range(1, int(messages[0])+1):
+            # need to parse her and rearrange
+            useless_info, data = self._mail_connection.fetch(str(i), "(RFC822)")
+            list_of_emails.append(data)
+        email_indexes_in_order_of_date_time = self._rearrange_emails_by_datetime(list_of_emails)
+
+        for j in range(len(email_indexes_in_order_of_date_time)):
+            if email_indexes_in_order_of_date_time[j]['index'] > 0:
+                self._parse_email(email_indexes_in_order_of_date_time[j]['index'])
 
     def _commit_email_to_persistent_storage(self, sender, receiver, subject, date, status, file_path=''):
         self._logger.info(' Saving email details in csv file ')
@@ -87,8 +96,22 @@ class Scanner:
         msg_uid = self._parse_uid(data[0].decode('utf-8'))
         self._mail_connection.uid('COPY', msg_uid, config.InFocusGmailFolderName)
 
+    def _rearrange_emails_by_datetime(self, list_of_emails):
+        emails_indices_by_datetime = []
+        for i in range(len(list_of_emails)):
+            for response in list_of_emails[i]:
+                if isinstance(response, tuple):
+                    try:
+                        # parse a bytes email into a message object
+                        email_data = email.message_from_bytes(response[1])
+                        received_date = self._parse_date(decode_header(email_data["Date"])[0][0])
+                        emails_indices_by_datetime.append({'datetime': received_date, 'index': i})
+                    except Exception as e:
+                        print(e)
+        return sorted(emails_indices_by_datetime, key=lambda x: x['datetime'])
+
     def _parse_email(self, email_index):
-        typ, data = self._mail_connection.fetch(str(email_index), "(RFC822)")
+        typ, data = self._mail_connection.fetch(str(int(str(email_index))+1), "(RFC822)")
         for response in data:
             self._logger.info('- Reading CSV File ')
             self._csv_handler.read_csv_file()
@@ -107,13 +130,12 @@ class Scanner:
                     # email sender
                     sender = email_data.get("From")
                     receiver = self._email
-
                     status = 'Scanned'
                     if sender.find('Daft.ie Property Alert') > -1:
                         # need to see if the this email has already been cataloged
                         if (len(previously_scanned_emails)) > 0:
 
-                            last_scanned_email = previously_scanned_emails[len(previously_scanned_emails) - 1]
+                            last_scanned_email = previously_scanned_emails[len(previously_scanned_emails)-1]
                             date_of_last_scanned_email = self._parse_date(last_scanned_email['date'])
                             if date_of_last_scanned_email < received_date:
                                 self._process_email(sender, subject, received_date,
@@ -138,13 +160,13 @@ class Scanner:
 
         # scrape url
         scraper = DaftScraper(str(subject), self._extract_url_from_email_body(email_data))
-        scraper.scrape_details()
+        ##scraper.scrape_details()
         scraper.scrape_images()
 
         # copy the email into the InFocus folder so we can spool up and android emulator
         # open gmail -> navigate to the the InFocus folder and will select the first email in that
         # folder (Should be the one currently in memory)
-        self._copy_email_to_inFocus_folder(email_index)
+        self._copy_email_to_inFocus_folder(email_index+1)
         # write message to landlord
         self._logger.info(' Launching emulator ')
         message_landlord_on_emulator(config.message, self._logger)
